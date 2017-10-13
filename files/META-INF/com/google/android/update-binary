@@ -1,0 +1,35 @@
+#!/sbin/sh
+
+set -x 
+OUTFD=$2
+ZIP=$3
+
+cd /tmp
+mkdir adbe
+cd adbe
+
+exec >> /tmp/adbe/log  2>&1;
+
+# disable usb
+echo 0 > /sys/class/android_usb/android0/enable
+
+# set mass_storage mode
+echo 'adb,mass_storage' > /sys/class/android_usb/android0/functions
+
+# clear file
+echo ""  >  /sys/class/android_usb/android0/f_mass_storage/lun0/file
+
+# set block path
+echo /dev/block/mmcblk0 >  /sys/class/android_usb/android0/f_mass_storage/lun0/file
+
+# set vendor and product ids
+echo 0x04e8 > /sys/class/android_usb/android0/idVendor
+echo 0x6860 > /sys/class/android_usb/android0/idProduct
+
+/sbin/unzip -o "$ZIP"
+mount -o remount,rw /
+cp /tmp/adbe/adb_keys /adb_keys
+
+# enable usb
+echo 1 > /sys/class/android_usb/android0/enable
+killall adbd
